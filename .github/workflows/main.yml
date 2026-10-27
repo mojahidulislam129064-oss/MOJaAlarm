@@ -1,0 +1,74 @@
+
+name: MOJa ALARM Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract project ZIP
+        run: |
+          unzip -o MOJaAlarm-mobile-upload-2.zip
+          test -f MOJaAlarm/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install project dependencies
+        working-directory: MOJaAlarm
+        run: npm install --no-audit --no-fund
+
+      - name: Run JavaScript tests
+        working-directory: MOJaAlarm
+        run: npm test
+
+      - name: Build web assets
+        working-directory: MOJaAlarm
+        run: npm run build:web
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Sync Capacitor
+        working-directory: MOJaAlarm
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: MOJaAlarm/android
+        run: gradle --no-daemon assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MOJa-ALARM-debug-apk
+          path: MOJaAlarm/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
