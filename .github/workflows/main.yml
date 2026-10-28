@@ -20,7 +20,7 @@ jobs:
 
       - name: Extract project ZIP
         run: |
-          unzip -o MOJaAlarm-mobile-upload-2.zip
+          unzip -o MOJaAlarm-fixed.zip
           test -f MOJaAlarm/package.json
 
       - name: Set up Node.js
@@ -44,7 +44,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - name: Install Android SDK packages
         run: |
