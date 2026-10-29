@@ -19,9 +19,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract project ZIP
+        shell: bash
         run: |
-          unzip -o MOJaAlarm-fixed.zip
-          test -f MOJaAlarm/package.json
+          set -euo pipefail
+
+          if [ -f MOJaAlarm-fixed.zip ]; then
+            ZIP_FILE="MOJaAlarm-fixed.zip"
+          elif [ -f MOJaAlarm-mobile-upload-2.zip ]; then
+            ZIP_FILE="MOJaAlarm-mobile-upload-2.zip"
+          else
+            echo "ERROR: Project ZIP not found"
+            exit 1
+          fi
+
+          mkdir -p extracted
+          unzip -o "$ZIP_FILE" -d extracted
+
+          PACKAGE_FILE="$(find extracted -type f -name package.json -print -quit)"
+          test -n "$PACKAGE_FILE"
+
+          echo "PROJECT_DIR=$(dirname "$PACKAGE_FILE")" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,7 +72,7 @@ jobs:
           yes | "$SDKMANAGER" --licenses
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
-      - name: Set up Gradle
+       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
@@ -65,9 +82,11 @@ jobs:
         run: npx cap sync android
 
       - name: Build debug APK
-        working-directory: MOJaAlarm/android
-        run: gradle --no-daemon assembleDebug
-
+        shell: bash
+        working-directory: ${{ env.PROJECT_DIR }}/android
+        run: |
+          set -euo pipefail
+          gradle --no-daemon assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
