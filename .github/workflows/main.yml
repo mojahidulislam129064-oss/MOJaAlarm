@@ -81,6 +81,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      
       - name: Install Android SDK packages
         shell: bash
         run: |
@@ -96,7 +97,7 @@ jobs:
             exit 1
           fi
 
-          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses || true
 
           "$SDKMANAGER" --sdk_root="$SDK_ROOT" \
             "platforms;android-35" \
